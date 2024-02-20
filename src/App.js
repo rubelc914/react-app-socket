@@ -16,13 +16,13 @@ const callBackendApiAndTriggerEvent = () => {
   })
   .then(response => response.json())
   .then(data => {
-      console.log("Data to send:", {
-          channel: 'test-channel' + 2,
-          event: 'PrivateEvent',
-          data: {
-              message: data,
-          }
-      }); 
+      // console.log("Data to send:", {
+      //     channel: 'test-channel' + 2,
+      //     event: 'PrivateEvent',
+      //     data: {
+      //         message: data,
+      //     }
+      // }); 
       // Trigger the private channel event
       socket.send(JSON.stringify({
           channel: 'test-channel'+ 2, 
@@ -31,6 +31,7 @@ const callBackendApiAndTriggerEvent = () => {
               message: data,
           }
       }));
+      socket.onmessage = (data) => {console.log("inside event" +data)}
   })  
   .catch(error => {
       console.error('Error:', error);
@@ -61,6 +62,7 @@ socket.addEventListener("error", (event) => {
 socket.addEventListener("close", (event) => {
     console.log("WebSocket connection closed:", event);
 });
+
 
 function App() {
   return (
