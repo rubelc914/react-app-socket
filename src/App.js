@@ -1,79 +1,52 @@
-import logo from "./logo.svg";
-import "./App.css";
-import { useEffect } from "react";
+import React, { useEffect } from 'react';
+import echo from './util/echo'; // Adjust the path as needed
+import Pusher from 'pusher-js';
+import Echo from 'laravel-echo';
 
-function App() {
-  const bearerToken = "10|XrS4V9Il7knFoCynD20zhQfB45icv3jl0k8QNgZi";
-  const socketUrl = "ws://127.0.0.1:6001/app/laravel";
+function MyComponent() {
+    useEffect(() => {
+        console.log('Component mounted');
 
-  const socket = new WebSocket(socketUrl);
+        // Example of subscribing to a channel
+        const channel = echo.channel('channel-public');
+        console.log(echo.connector.socket);
 
-  const send = () => {
-    socket.send(
-      JSON.stringify({
-        channel: "test-channel" + 1,
-        event: "PrivateEvent",
-        data: {
-          message: "hello",
-        },
-      })
+        // Ensure echo.connector.socket exists before setting event listeners
+        if (echo.connector.socket) {
+            // Log when an error occurs with the WebSocket connection
+            echo.connector.socket.onerror = (error) => {
+                console.error('WebSocket connection error:', error);
+            };
+
+            // Log when the WebSocket connection is closed
+            echo.connector.socket.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+
+            // Log when the WebSocket connection is established
+            echo.connector.socket.onopen = () => {
+                console.log('WebSocket connection established');
+            };
+        } else {
+            console.error('WebSocket connection not established');
+        }
+
+        channel.listen('PublicEvent', (data) => {
+            console.log('Received event:', data);
+        });
+
+        // Clean up subscription on component unmount
+        return () => {
+            channel.unsubscribe();
+            console.log('Component unmounted');
+        };
+    }, []);
+
+    return (
+        <div>
+            {/* Your component JSX */}
+        </div>
     );
-  };
-
-  const callBackendApiAndTriggerEvent = () => {
-    // Replace this with your actual backend API endpoint
-    fetch("http://127.0.0.1:8000/api/private/1", {
-      method: "GET",
-      headers: {
-        Authorization: bearerToken,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("data", data);
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  };
-
-  useEffect(() => {
-    const handleOpen = (event) => {
-      console.log("WebSocket connection opened:", event);
-      callBackendApiAndTriggerEvent();
-    };
-
-    const handleError = (event) => {
-      console.error("WebSocket error:", event);
-    };
-
-    const handleClose = (event) => {
-      console.log("WebSocket connection closed:", event);
-    };
-
-    socket.addEventListener("open", handleOpen);
-    socket.addEventListener("error", handleError);
-    socket.addEventListener("close", handleClose);
-    socket.onmessage = (event) => {
-      const parseEvent = JSON.parse(event.data);
-      const message = parseEvent.data;
-      console.log("message", message);
-    };
-
-    return () => {
-      // Clean up event listeners on component unmount
-      socket.removeEventListener("open", handleOpen);
-      socket.removeEventListener("error", handleError);
-      socket.removeEventListener("close", handleClose);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array to run the effect only once on mount
-
-  return (
-    <div className="App">
-      <button onClick={() => send()}>send</button>
-    </div>
-  );
 }
 
-export default App;
+export default MyComponent;
