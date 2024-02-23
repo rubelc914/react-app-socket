@@ -1,52 +1,49 @@
 import React, { useEffect } from 'react';
-import echo from './util/echo'; // Adjust the path as needed
-import Pusher from 'pusher-js';
 import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
-function MyComponent() {
+const MyComponent = () => {
     useEffect(() => {
-        console.log('Component mounted');
+        // Initialize Laravel Echo
+        // window.Pusher = Pusher;
 
-        // Example of subscribing to a channel
-        const channel = echo.channel('channel-public');
-        console.log(echo.connector.socket);
-
-        // Ensure echo.connector.socket exists before setting event listeners
-        if (echo.connector.socket) {
-            // Log when an error occurs with the WebSocket connection
-            echo.connector.socket.onerror = (error) => {
-                console.error('WebSocket connection error:', error);
-            };
-
-            // Log when the WebSocket connection is closed
-            echo.connector.socket.onclose = () => {
-                console.log('WebSocket connection closed');
-            };
-
-            // Log when the WebSocket connection is established
-            echo.connector.socket.onopen = () => {
-                console.log('WebSocket connection established');
-            };
-        } else {
-            console.error('WebSocket connection not established');
-        }
-
-        channel.listen('PublicEvent', (data) => {
-            console.log('Received event:', data);
+        const echo = new Echo({
+            broadcaster: 'pusher',
+            key: 'PLARAVEL',
+            wsHost: window.location.hostname,
+            wsPort: 6001,
+            cluster: "mt1",
+            forceTLS: false,
+            disableStats: true,
+            enabledTransports: ['ws'],
+            authEndpoint :'http://127.0.0.1:8000/api/broadcasting/auth',
+            auth:{
+                headers: {
+                    Authorization: 'Bearer '+'12|9DcgBtMzFjID6Y3NXWiYq1ZWGLkYXQLEzzJohHQw', 
+                }
+            },
         });
 
-        // Clean up subscription on component unmount
+        // Subscribe to a channel
+        const channel = echo.channel('channel-public');
+
+        // Listen for an event
+        channel.listen('.PublicEvent', (data) => {
+            console.log('Event received:', data);
+            // Handle the received event data
+        });
+
+        // Cleanup function to stop listening when the component unmounts
         return () => {
-            channel.unsubscribe();
-            console.log('Component unmounted');
+            channel.stopListening('.PublicEvent');
         };
     }, []);
 
     return (
         <div>
-            {/* Your component JSX */}
+            {/* Your component content */}
         </div>
     );
-}
+};
 
 export default MyComponent;
